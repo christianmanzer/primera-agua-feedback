@@ -622,22 +622,41 @@
       timestamp: new Date().toISOString()
     };
 
+    const confirmEl = document.getElementById('confirmMsg');
+
     if (FEEDBACK_ENDPOINT_READY) {
       try {
-        await fetch(FEEDBACK_ENDPOINT, {
+        const res = await fetch(FEEDBACK_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+
+        if (!res.ok) {
+          const detail = await res.text().catch(() => '');
+          console.error('Feedback send failed', res.status, detail);
+          confirmEl.textContent = "Something didn't go through. Mind trying again in a moment?";
+          confirmEl.style.color = 'var(--caution-red)';
+          document.getElementById('feedbackForm').hidden = true;
+          confirmEl.hidden = false;
+          return;
+        }
       } catch (err) {
-        console.error('Feedback send failed', err);
+        console.error('Feedback send threw', err);
+        confirmEl.textContent = "Something didn't go through. Mind trying again in a moment?";
+        confirmEl.style.color = 'var(--caution-red)';
+        document.getElementById('feedbackForm').hidden = true;
+        confirmEl.hidden = false;
+        return;
       }
     } else {
       console.log('Feedback captured (endpoint not wired yet):', payload);
     }
 
+    confirmEl.textContent = "Thanks, the team's on it.";
+    confirmEl.style.color = 'var(--flag-green)';
     document.getElementById('feedbackForm').hidden = true;
-    document.getElementById('confirmMsg').hidden = false;
+    confirmEl.hidden = false;
   });
 
   renderPicker();
